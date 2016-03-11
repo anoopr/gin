@@ -65,7 +65,7 @@ func main() {
 			Usage: "use godep when building",
 		},
 		cli.BoolFlag{
-			Name:  "verbose,v",
+			Name:  "verbose",
 			Usage: "Verbose logging",
 		},
 	}
