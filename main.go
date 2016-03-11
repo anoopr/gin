@@ -21,6 +21,7 @@ var (
 	startTime  = time.Now()
 	logger     = log.New(os.Stdout, "[gin] ", 0)
 	immediate  = false
+	verbose    = false
 	buildError error
 )
 
@@ -63,6 +64,10 @@ func main() {
 			Name:  "godep,g",
 			Usage: "use godep when building",
 		},
+		cli.BoolFlag{
+			Name:  "verbose,v",
+			Usage: "Verbose logging",
+		},
 	}
 	app.Commands = []cli.Command{
 		{
@@ -86,6 +91,7 @@ func MainAction(c *cli.Context) {
 	port := c.GlobalInt("port")
 	appPort := strconv.Itoa(c.GlobalInt("appPort"))
 	immediate = c.GlobalBool("immediate")
+	verbose = c.GlobalBool("verbose")
 
 	// Bootstrap the environment
 	envy.Bootstrap()
@@ -171,6 +177,9 @@ func scanChanges(watchPath string, excludePath string, cb scanCallback) {
 
 			// ignore excluded paths
 			if filepath.Base(path) == excludePath {
+				if verbose {
+					logger.Println("Excluded ", path)
+				}
 				return filepath.SkipDir
 			}
 
