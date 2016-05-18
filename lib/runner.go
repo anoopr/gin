@@ -41,7 +41,7 @@ func (r *runner) Run() (*exec.Cmd, error) {
 
 	if r.command == nil || r.Exited() {
 		err := r.runBin()
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 		return r.command, err
 	} else {
 		return r.command, nil
