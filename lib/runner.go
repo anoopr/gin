@@ -23,7 +23,7 @@ type runner struct {
 	writer    io.Writer
 	command   *exec.Cmd
 	starttime time.Time
-	starting  bool
+	status    string
 }
 
 func NewRunner(bin string, args ...string) Runner {
@@ -32,7 +32,7 @@ func NewRunner(bin string, args ...string) Runner {
 		args:      args,
 		writer:    ioutil.Discard,
 		starttime: time.Now(),
-		starting:  false,
+		status:    "new",
 	}
 }
 
@@ -41,7 +41,7 @@ func (r *runner) Run() (*exec.Cmd, error) {
 		r.Kill()
 	}
 
-	for r.starting == true {
+	for r.status == "starting" {
 		time.Sleep(250 * time.Millisecond)
 	}
 
@@ -98,22 +98,22 @@ func (r *runner) Exited() bool {
 }
 
 func (r *runner) runBin() error {
-	r.starting = true
+	r.status = "starting"
 	r.command = exec.Command(r.bin, r.args...)
 	stdout, err := r.command.StdoutPipe()
 	if err != nil {
-		r.starting = false
+		r.status = "error"
 		return err
 	}
 	stderr, err := r.command.StderrPipe()
 	if err != nil {
-		r.starting = false
+		r.status = "error"
 		return err
 	}
 
 	err = r.command.Start()
 	if err != nil {
-		r.starting = false
+		r.status = "error"
 		return err
 	}
 
@@ -124,7 +124,7 @@ func (r *runner) runBin() error {
 	go r.command.Wait()
 
 	time.Sleep(1000 * time.Millisecond)
-	r.starting = false
+	r.status = "up"
 
 	return nil
 }
