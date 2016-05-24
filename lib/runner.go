@@ -39,9 +39,15 @@ func (r *runner) Run() (*exec.Cmd, error) {
 		r.Kill()
 	}
 
+	for time.Now().Sub(r.starttime) < 1000*time.Millisecond {
+		time.Sleep(250 * time.Millisecond)
+	}
+
 	if r.command == nil || r.Exited() {
 		err := r.runBin()
-		time.Sleep(1000 * time.Millisecond)
+		for time.Now().Sub(r.starttime) < 1000*time.Millisecond {
+			time.Sleep(250 * time.Millisecond)
+		}
 		return r.command, err
 	} else {
 		return r.command, nil
