@@ -23,6 +23,7 @@ type runner struct {
 	writer    io.Writer
 	command   *exec.Cmd
 	starttime time.Time
+	starting  bool
 }
 
 func NewRunner(bin string, args ...string) Runner {
@@ -31,6 +32,7 @@ func NewRunner(bin string, args ...string) Runner {
 		args:      args,
 		writer:    ioutil.Discard,
 		starttime: time.Now(),
+		starting:  false,
 	}
 }
 
@@ -39,15 +41,12 @@ func (r *runner) Run() (*exec.Cmd, error) {
 		r.Kill()
 	}
 
-	for time.Now().Sub(r.starttime) < 1000*time.Millisecond {
+	for r.starting == true {
 		time.Sleep(250 * time.Millisecond)
 	}
 
 	if r.command == nil || r.Exited() {
 		err := r.runBin()
-		for time.Now().Sub(r.starttime) < 1000*time.Millisecond {
-			time.Sleep(250 * time.Millisecond)
-		}
 		return r.command, err
 	} else {
 		return r.command, nil
@@ -99,18 +98,22 @@ func (r *runner) Exited() bool {
 }
 
 func (r *runner) runBin() error {
+	r.starting = true
 	r.command = exec.Command(r.bin, r.args...)
 	stdout, err := r.command.StdoutPipe()
 	if err != nil {
+		r.starting = false
 		return err
 	}
 	stderr, err := r.command.StderrPipe()
 	if err != nil {
+		r.starting = false
 		return err
 	}
 
 	err = r.command.Start()
 	if err != nil {
+		r.starting = false
 		return err
 	}
 
@@ -119,6 +122,9 @@ func (r *runner) runBin() error {
 	go io.Copy(r.writer, stdout)
 	go io.Copy(r.writer, stderr)
 	go r.command.Wait()
+
+	time.Sleep(1000 * time.Millisecond)
+	r.starting = false
 
 	return nil
 }
