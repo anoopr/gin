@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -24,6 +25,7 @@ type runner struct {
 	command   *exec.Cmd
 	starttime time.Time
 	status    string
+	mux       sync.Mutex
 }
 
 func NewRunner(bin string, args ...string) Runner {
@@ -40,6 +42,9 @@ func (r *runner) Run() (*exec.Cmd, error) {
 	if r.needsRefresh() {
 		r.Kill()
 	}
+
+	r.mux.Lock()
+	defer r.mux.Unlock()
 
 	for r.status == "starting" {
 		time.Sleep(250 * time.Millisecond)
