@@ -100,6 +100,7 @@ func (r *runner) Exited() bool {
 func (r *runner) runBin() error {
 	r.status = "starting"
 	r.command = exec.Command(r.bin, r.args...)
+	log.Printf("First: %+v", r)
 	stdout, err := r.command.StdoutPipe()
 	if err != nil {
 		r.status = "error"
@@ -121,7 +122,7 @@ func (r *runner) runBin() error {
 
 	go io.Copy(r.writer, stdout)
 	go io.Copy(r.writer, stderr)
-	log.Printf("%+v", r)
+	log.Printf("Second: %+v", r)
 	go r.command.Wait()
 
 	time.Sleep(1000 * time.Millisecond)
