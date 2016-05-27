@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"runtime"
@@ -24,7 +25,6 @@ type runner struct {
 	writer    io.Writer
 	command   *exec.Cmd
 	starttime time.Time
-	status    string
 	mux       sync.Mutex
 }
 
@@ -34,7 +34,6 @@ func NewRunner(bin string, args ...string) Runner {
 		args:      args,
 		writer:    ioutil.Discard,
 		starttime: time.Now(),
-		status:    "new",
 	}
 }
 
@@ -45,10 +44,6 @@ func (r *runner) Run() (*exec.Cmd, error) {
 
 	r.mux.Lock()
 	defer r.mux.Unlock()
-
-	for r.status == "starting" {
-		time.Sleep(250 * time.Millisecond)
-	}
 
 	if r.command == nil || r.Exited() {
 		err := r.runBin()
@@ -103,23 +98,18 @@ func (r *runner) Exited() bool {
 }
 
 func (r *runner) runBin() error {
-	r.status = "starting"
 	r.command = exec.Command(r.bin, r.args...)
-	log.Printf("First: %+v", r)
 	stdout, err := r.command.StdoutPipe()
 	if err != nil {
-		r.status = "error"
 		return err
 	}
 	stderr, err := r.command.StderrPipe()
 	if err != nil {
-		r.status = "error"
 		return err
 	}
 
 	err = r.command.Start()
 	if err != nil {
-		r.status = "error"
 		return err
 	}
 
@@ -127,11 +117,14 @@ func (r *runner) runBin() error {
 
 	go io.Copy(r.writer, stdout)
 	go io.Copy(r.writer, stderr)
-	log.Printf("Second: %+v", r)
 	go r.command.Wait()
 
-	time.Sleep(1000 * time.Millisecond)
-	r.status = "up"
+	_, err = net.Dial("tcp", "localhost:3001")
+	for err != nil {
+		log.Println("Waiting for 3001")
+		time.Sleep(1000 * time.Millisecond)
+		_, err = net.Dial("tcp", "localhost:3001")
+	}
 
 	return nil
 }
