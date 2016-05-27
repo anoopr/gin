@@ -119,12 +119,13 @@ func (r *runner) runBin() error {
 	go io.Copy(r.writer, stderr)
 	go r.command.Wait()
 
-	_, err = net.Dial("tcp", "localhost:3001")
+	conn, err := net.Dial("tcp", ":3001")
 	for err != nil {
-		log.Println("Waiting for 3001")
+		log.Printf("Waiting for 3001: %+v, %+v", conn, err)
 		time.Sleep(1000 * time.Millisecond)
-		_, err = net.Dial("tcp", "localhost:3001")
+		conn, err = net.Dial("tcp", ":3001")
 	}
+	conn.Close()
 
 	return nil
 }
