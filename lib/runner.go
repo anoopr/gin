@@ -121,6 +121,7 @@ func (r *runner) runBin() error {
 
 	go io.Copy(r.writer, stdout)
 	go io.Copy(r.writer, stderr)
+	log.Printf("%+v", r)
 	go r.command.Wait()
 
 	time.Sleep(1000 * time.Millisecond)
